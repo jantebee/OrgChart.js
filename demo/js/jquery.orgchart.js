@@ -76,6 +76,7 @@
         })
         .done(function(data, textStatus, jqXHR) {
           that.buildHierarchy($chart, that.options.ajaxURL ? data : that.attachRel(data, '00'), 0, that.options);
+         // that.buildParentHierarchy($chart, that.options.ajaxURL ? data : that.attachRel(data, '00'), 0, that.options);
         })
         .fail(function(jqXHR, textStatus, errorThrown) {
           console.log(errorThrown);
@@ -1248,6 +1249,68 @@
           $nodesLayer.append($nodeCell);
           this.level = level + 1;
           that.buildHierarchy($nodeCell, this);
+        });
+      }
+    },
+    buildParentHierarchy: function ($appendTo, data) {
+      var that = this;
+      var opts = this.options;
+      var level = 0;
+      if (data.level) {
+        level = data.level;
+      } else {
+        level = data.level = $appendTo.parentsUntil('.orgchart', '.nodes').length + 1;
+      }
+      // Construct the node
+      var childrenData = data.children;
+      var hasChildren = childrenData ? childrenData.length : false;
+      var $nodeWrapper;
+      if (Object.keys(data).length > 2) {
+        var $nodeDiv = this.createNode(data);
+        if (opts.verticalLevel && level >= opts.verticalLevel) {
+          $appendTo.prepend($nodeDiv);
+        }else {
+          $nodeWrapper = $('<table>');
+          $appendTo.prepend($nodeWrapper.append($('<tr/>').append($('<td' + (hasChildren ? ' colspan="' + childrenData.length * 2 + '"' : '') + '></td>').append($nodeDiv))));
+        }
+      }
+      
+      // Construct the lower level(two "connectiong lines" rows and "inferior nodes" row)
+      if (hasChildren) {
+        var isHidden = (level + 1 > opts.visibleLevel || data.collapsed) ? ' hidden' : '';
+        var isVerticalLayer = (opts.verticalLevel && (level + 1) >= opts.verticalLevel) ? true : false;
+        var $nodesLayer;
+        if (isVerticalLayer) {
+          $nodesLayer = $('<ul>');
+          if (isHidden && level + 1 > opts.verticalLevel) {
+            $nodesLayer.addClass(isHidden);
+          }
+          if (level + 1 === opts.verticalLevel) {
+            $appendTo.children('table').prepend('<tr class="verticalNodes' + isHidden + '"><td></td></tr>')
+              .find('.verticalNodes').children().append($nodesLayer);
+          } else {
+            $appendTo.prepend($nodesLayer);
+          }
+        } else {
+          var $upperLines = $('<tr class="lines' + isHidden + '"><td colspan="' + childrenData.length * 2 + '"><div class="downLine"></div></td></tr>');
+          var lowerLines = '<tr class="lines' + isHidden + '"><td class="rightLine"></td>';
+          for (var i=1; i<childrenData.length; i++) {
+            lowerLines += '<td class="leftLine topLine"></td><td class="rightLine topLine"></td>';
+          }
+          lowerLines += '<td class="leftLine"></td></tr>';
+          $nodesLayer = $('<tr class="nodes' + isHidden + '">');
+          if (Object.keys(data).length === 2) {
+            $appendTo.prepend($upperLines).append(lowerLines).append($nodesLayer);
+          } else {
+            $nodeWrapper.prepend($upperLines).append(lowerLines).append($nodesLayer);
+          }
+        }
+        // recurse through children nodes
+        $.each(childrenData, function () {
+          var $nodeCell = isVerticalLayer ? $('<li>') : $('<td colspan="2">');
+          $nodesLayer.prepend($nodeCell);
+          this.level = level + 1;
+          that.buildParentHierarchy($nodeCell, this);
         });
       }
     },

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
+<script src="https://unpkg.com/d3-graphviz@1.3.1/build/d3-graphviz.min.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery.mockjax.min.js"></script>
+
+<div>
+    <select id="dropdown"><option value="test">test</option></select>
+</div>
+<div id="graph" style="text-align: center;"></div>
+<script>
+
+var dotIndex = 0;
+var graphviz = d3.select("#graph").graphviz()
+    .transition(function () {
+        return d3.transition("main")
+            .ease(d3.easeLinear)
+            .delay(0)
+            .duration(250);
+    })
+    .logEvents(true)
+    .on("initEnd", render);
+
+function render(dot) {
+    dot = typeof dot !== 'undefined' ? dot : "digraph  { a -> b; a -> c }";
+    graphviz
+        .transition(
+            d3.transition()
+                .delay(0)
+                .duration(250)
+        )
+        .renderDot(dot)
+}
+
+
+$(function() {
+
+    $.mockjax({
+    url: '/orgchart/children/n3',
+    contentType: 'application/json',
+    responseTime: 1000,
+    responseText: { 'children': [
+        { 'id': 'n4', 'name': 'Pang Pang Mod', 'relationship': '100' },
+        { 'id': 'n5', 'name': 'Xiang Xiang', 'relationship': '100'}
+    ]}
+    });
+
+    $.ajax({
+        type: "GET",
+        url: "http://localhost:3004/graphs",
+        success: function(data)
+        {
+            helpers.buildDropdown(
+                data,
+                $('#dropdown'),
+                'Select an option'
+            );
+        }
+    });
+
+
+    $('#dropdown').change(function() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:3004/graph/" + $(this).val(),
+            success: function(msg)
+            {
+                render(msg.graph)
+            }
+        });
+    });
+
+    var helpers =
+  {
+      buildDropdown: function(result, dropdown, emptyMessage)
+      {
+          // Remove current options
+          dropdown.html('');
+          // Add the empty option with the empty message
+          dropdown.append('<option value="">' + emptyMessage + '</option>');
+          // Check result isnt empty
+          if(result != '')
+          {
+              // Loop through each of the results and append the option to the dropdown
+              $.each(result, function(k, v) {
+                  dropdown.append('<option value="' + v.id + '">' + v.name + '</option>');
+              });
+          }
+      }
+  }
+});
+
+</script>

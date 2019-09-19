@@ -9,11 +9,16 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div id="chart-container"></div>
+  <div id="outer-boarder">
+    <select id="dropdown"><option value="test">test</option></select>
+    <div id="chart-container"></div>
+  </div>
+
 
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/jquery.orgchart.js"></script>
   <script type="text/javascript" src="js/jquery.mockjax.min.js"></script>
+  <script type="text/javascript" src="js/html2canvas.min.js"></script>
   <script type="text/javascript">
     $(function() {
 
@@ -22,66 +27,22 @@
       contentType: 'application/json',
       responseTime: 1000,
       responseText: { 'children': [
-        { 'id': 'n4', 'name': 'Pang Pang', 'title': 'engineer', 'relationship': '110' },
-        { 'id': 'n5', 'name': 'Xiang Xiang', 'title': 'UE engineer', 'relationship': '110'}
-      ]}
-    });
-
-    $.mockjax({
-      url: '/orgchart/parent/n1',
-      contentType: 'application/json',
-      responseTime: 1000,
-      responseText: { 'id': 'n6','name': 'Lao Lao', 'title': 'general manager', 'relationship': '001' }
-    });
-
-    $.mockjax({
-      url: '/orgchart/siblings/n1',
-      contentType: 'application/json',
-      responseTime: 1000,
-      responseText: { 'siblings': [
-        { 'id': '7','name': 'Bo Miao', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': '8', 'name': 'Yu Jie', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': '9', 'name': 'Yu Li', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': '10', 'name': 'Hong Miao', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': '11', 'name': 'Yu Wei', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': '12', 'name': 'Chun Miao', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': '13', 'name': 'Yu Tie', 'title': 'department engineer', 'relationship': '110' }
-      ]}
-    });
-
-    $.mockjax({
-      url: '/orgchart/families/n1',
-      contentType: 'application/json',
-      responseTime: 1000,
-      responseText: {
-        'id': 'n6',
-        'name': 'Lao Lao',
-        'title': 'general manager',
-        'relationship': '001',
-        'children': [
-        { 'id': 'n7','name': 'Bo Miao', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': 'n8', 'name': 'Yu Jie', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': 'n9', 'name': 'Yu Li', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': 'n10', 'name': 'Hong Miao', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': 'n11', 'name': 'Yu Wei', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': 'n12', 'name': 'Chun Miao', 'title': 'department engineer', 'relationship': '110' },
-        { 'id': 'n13', 'name': 'Yu Tie', 'title': 'department engineer', 'relationship': '110' }
+        { 'id': 'n4', 'name': 'Pang Pang Mod', 'relationship': '100' },
+        { 'id': 'n5', 'name': 'Xiang Xiang', 'relationship': '100'}
       ]}
     });
 
     var datascource = {
-      'id': 'n1',
-      'name': 'Su Miao',
-      'title': 'department manager',
-      'relationship': '111',
+      'id': 'diagnostic-engine-migration',
+      'name': 'diagnostic-engine-migration',
+      'relationship': '001',
       'children': [
-        { 'id': 'n2','name': 'Tie Hua', 'title': 'senior engineer', 'relationship': '110' },
-        { 'id': 'n3','name': 'Hei Hei', 'title': 'senior engineer', 'relationship': '111' }
+        { 'id': 'diagnostic-engine','name': 'diagnostic-engine', 'relationship': '001' },
       ]
     };
 
     var ajaxURLs = {
-      'children': '/orgchart/children/',
+      'children': 'http://localhost:3004/services/',
       'parent': '/orgchart/parent/',
       'siblings': function(nodeData) {
         return '/orgchart/siblings/' + nodeData.id;
@@ -91,14 +52,59 @@
       }
     };
 
-    $('#chart-container').orgchart({
-      'data' : datascource,
+
+    var oc = $('#chart-container').orgchart({
+      'data': 'http://localhost:3004/services/hmp-bff',
       'ajaxURL': ajaxURLs,
-      'nodeContent': 'title',
-      'nodeId': 'id'
+    //  'nodeContent': 'title',
+      'nodeId': 'id',
+      'toggleSiblingsResp': 'false',
+      'direction':'l2r',
+      'pan': true,
+      'exportButton': true,
+      'exportFilename': 'MyArchChart',
+      'nodeContent': 'team',
+      'zoom': true
+    });
+
+    $.ajax({
+            type: "GET",
+            url: "http://localhost:3004/list",
+            success: function(data)
+            {
+                helpers.buildDropdown(
+                    data,
+                    $('#dropdown'),
+                    'Select an option'
+                );
+            }
+        });
+
+
+    $('#dropdown').change(function() {
+      oc.init({ 'data': 'http://localhost:3004/services/' + $(this).val() });  
     });
 
   });
+
+  var helpers =
+  {
+      buildDropdown: function(result, dropdown, emptyMessage)
+      {
+          // Remove current options
+          dropdown.html('');
+          // Add the empty option with the empty message
+          dropdown.append('<option value="">' + emptyMessage + '</option>');
+          // Check result isnt empty
+          if(result != '')
+          {
+              // Loop through each of the results and append the option to the dropdown
+              $.each(result, function(k, v) {
+                  dropdown.append('<option value="' + v.id + '">' + v.name + '</option>');
+              });
+          }
+      }
+  }
   </script>
   </body>
 </html>

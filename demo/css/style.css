@@ -12,12 +12,20 @@ body {
   color: #333333;
 }
 
+#outer-boarder {
+  position: relative;
+  top: 10px;
+  left: 10px;
+  height: calc(100% - 10px);
+  width: calc(100% - 10px);
+}
+
 #chart-container {
   position: relative;
   display: inline-block;
   top: 10px;
-  left: 10px;
-  height: 420px;
+  left: 0px;
+  height: calc(100% - 24px);
   width: calc(100% - 24px);
   border: 2px dashed #aaa;
   border-radius: 5px;

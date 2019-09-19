@@ -1,0 +1,22 @@
+{
+    "graphs": [
+        {
+            "id": "1",
+            "name": "1"
+        },
+        {
+            "id": "2",
+            "name": "2"
+        }
+    ],
+    "graph": [
+        {
+            "id": "1",
+            "graph": "digraph  { a -> b }"
+        },
+        {
+            "id": "2",
+            "graph": "digraph  { a -> b; a -> c }"
+        }
+    ]
+}
